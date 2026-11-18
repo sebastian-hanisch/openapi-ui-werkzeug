@@ -19,11 +19,30 @@ venv/Scripts/python.exe -m streamlit run app.py
 Die App lädt die Swagger UI (Version 5.17.14) zur Laufzeit vom CDN jsDelivr. Ohne Internetzugang bleibt der Rahmen mit der
 Oberfläche leer; Prüfung, Kennzahlen, Endpunktübersicht und JSON-Ansicht funktionieren weiter.
 
+## Benutzung
+
+Kurzfassung; ausführlich steht es in der App unter „📖 Benutzung“.
+
+1. **Hochladen** (Seitenleiste): `.yaml`, `.yml`, `.json` oder `.zip`, je Datei höchstens 5 MB. Eine Beschreibung in einer Datei: diese hochladen. **Auf mehrere
+   Dateien verteilt** (`$ref: ./schemas/Sendung.yaml`): den ganzen Ordner **als ZIP** hochladen, dann bleibt die Ordnerstruktur erhalten; alternativ alle Dateien auf einmal
+   markieren (dann ohne Ordnerstruktur). Aus einem ZIP werden höchstens 300 Dateien gelesen (entpackt höchstens 25 MB, je Datei höchstens 8 MB).
+2. **Einstiegsdatei wählen:** die Datei, mit der die Beschreibung beginnt (`openapi:` bzw. `swagger:`). Gibt es mehrere, zeigt die Auswahl je Datei Pfade und eingebundene Dateien;
+   vorausgewählt ist die größte, die keine andere Datei einbindet. Dateien ohne Pfade („nur Bausteine“) sind ausgeblendet, ein Schalter holt sie zurück.
+3. **Prüfung lesen:** Fehler zuerst (die Oberfläche stimmt an der Stelle nicht, zum Beispiel ein `$ref` auf eine nicht hochgeladene Datei), dann Warnungen (Hinweise). Die
+   Oberfläche wird trotzdem gezeichnet, sobald sich die Einstiegsdatei lesen ließ.
+4. **Oberfläche benutzen:** Operation anklicken (Parameter, Anfragekörper, Antworten), Reiter „Schema“ für die Typen, Filterleiste für Gruppen. Seitenleiste „Darstellung“: Aufklappen,
+   Typen aufklappen bis Tiefe, „Try it out“ (aus; eingeschaltet schickt es **echte Anfragen** aus dem Browser an die Server der Spezifikation), Höhe.
+5. **Laden und Nachlesen:** die Oberfläche als eigenständige HTML-Datei laden (beim Öffnen braucht sie Internet); darunter Endpunktübersicht und die gebündelte Spezifikation als JSON.
+
+**Wenn etwas nicht klappt:** Rahmen leer → kein Internet oder CDN gesperrt (die Swagger UI kommt von cdn.jsdelivr.net). „Failed to fetch“ in der Oberfläche → ein `$ref` auf eine
+Adresse im Netz, die der Browser nicht laden konnte. „… ist nicht hochgeladen“ → eine verwiesene Datei fehlt, den ganzen Ordner als ZIP hochladen. „… ist nicht eindeutig“ → als ZIP
+hochladen. „… nicht UTF-8-kodiert“ → Datei als UTF-8 speichern.
+
 ## Was das Werkzeug tut
 
 1. **Hochladen** (Seitenleiste): eine Datei, mehrere Dateien auf einmal oder ein ZIP (auch mehrere ZIPs). Alles Hochgeladene bildet **eine
    Dateimenge**. Einstiegsdatei ist eine Datei mit `openapi:` bzw. `swagger:` auf oberster Ebene; die übrigen Dateien stehen allen zur
-   Verfügung. Dateien werden nur für die Sitzung gelesen und nicht gespeichert. Höchstgröße je Upload: 5 MB (`.streamlit/config.toml`).
+   Verfügung. Dateien werden im Arbeitsspeicher verarbeitet und nicht dauerhaft gespeichert (Zwischenspeicher: siehe „Datenschutz“). Höchstgröße je Upload: 5 MB (`.streamlit/config.toml`).
    **Die Vorauswahl der Einstiegsdatei ergibt sich aus der Struktur** (`Satz.einstiege()`, ohne Namensraten und ohne Sprachmodell): Aus den
    `$ref`-Verweisen aller Dateien entsteht ein Graph. Ein Einstieg beschreibt Pfade oder Webhooks und wird **von keiner anderen Datei eingebunden**;
    gemeinsame Bausteine werden irgendwo eingebunden, auch wenn sie einen `openapi:`-Kopf und Pfade haben, oder sie haben `paths: {}`.
@@ -97,14 +116,30 @@ Darstellung (Seitenleiste): Aufklappen (`list`, `full`, `none`), Filterleiste, T
 * `st.iframe` setzt eine neuere Streamlit-Version voraus (geprüft mit 1.64, deshalb `streamlit>=1.64`).
 * **Doppelter Code:** `oa_parse.py` und `oa_render.py` stehen gleich in `openapi-ui-demo` (`oa_bundle.py` gibt es nur hier). Änderungen an einem Ort in beiden nachziehen.
 
+## Datenschutz
+
+Ein Hinweis zur Funktionsweise der App, keine vollständige Datenschutzerklärung eines Betreibers. Derselbe Text steht in der App unter „🔒 Datenschutz“; `tests/test_hinweise.py` prüft ihn gegen den Code.
+
+* **Hochgeladene Dateien:** Der Server, auf dem die App ausgeführt wird, liest, prüft und bündelt sie im Arbeitsspeicher. Der Python-Code schreibt nichts auf die Festplatte, in Protokolle oder
+  Datenbanken und ruft kein Netz auf (ein Test sucht danach).
+* **Zwischenspeicher:** Inhalt und Ergebnis liegen zur Beschleunigung im Zwischenspeicher des Servers (`st.cache_data`): höchstens 8 bzw. 16 Einträge, Ablauf nach 10 Minuten
+  (`oa_hinweise.CACHE_TTL_SEKUNDEN`), bei Neustart der App leer. Er gilt für alle Sitzungen derselben App-Instanz; die App kann Einträge anderer Sitzungen nicht anzeigen.
+* **Browser und Dritte:** Die Swagger UI wird beim Anzeigen vom CDN jsDelivr geladen; jsDelivr erfährt dabei technisch bedingt die IP-Adresse und die üblichen Verbindungsdaten, nicht den Inhalt der Dateien.
+  `$ref` auf Netzadressen lädt der Browser, wenn er kann (der Betreiber der Adresse sieht die Anfrage). „Try it out“ (aus) würde echte Anfragen an die Server der Spezifikation senden.
+* **Heruntergeladene HTML-Datei:** enthält die ganze Spezifikation im Klartext und lädt beim Öffnen ebenfalls von jsDelivr.
+* **Statistik und Plattform:** `gatherUsageStats = false` in `.streamlit/config.toml`; die App legt keine Konten an und setzt selbst keine Cookies (Streamlit hat eigene technische
+  Mechanismen für Sitzung und Upload-Schutz). Auf einer Plattform wie der Streamlit Community Cloud gelten zusätzlich deren Datenschutzhinweise und Protokolle.
+* **Empfehlung:** keine Dateien mit Zugangsdaten, Tokens oder vertraulichen Inhalten hochladen, wenn die App nicht selbst betrieben wird oder dem Betreiber nicht vertraut wird.
+
 ## Dateien
 
 ```
 app.py                   Oberfläche des Werkzeugs
 oa_parse.py              Lesen, Prüfen, Kennzahlen, Bytes → Text (ohne Streamlit)
 oa_bundle.py             Dateimenge laden (ZIP auspacken), `$ref` auf andere Dateien auflösen, zu einer Spezifikation bündeln
+oa_hinweise.py           Texte „Benutzung“ und „Datenschutz“ (Zahlen aus den Konstanten des Codes)
 oa_render.py             HTML-Seite mit Swagger UI, data:-Adresse, Dateiname
-tests/                   135 Tests (Parser, Bündeln, Einstiegswahl, Renderer, AppTest mit Upload, Laufzeit-Imports)
+tests/                   146 Tests (Parser, Bündeln, Einstiegswahl, Renderer, Hinweistexte, AppTest mit Upload, Laufzeit-Imports)
 tests/fixtures/          vier Testdateien (3.0, 3.1, 2.0, absichtlich fehlerhaft) und `ordner/` (sechs Dateien, 3.0.3), nur für die Tests
 requirements.txt         streamlit, pyyaml (ungepinnt)
 requirements-dev.txt     dazu pytest
@@ -117,7 +152,7 @@ requirements-dev.txt     dazu pytest
 venv/Scripts/python.exe -m pytest tests -q
 ```
 
-135 Tests; die Laufzeit schwankt mit der Rechnerlast (gemessen: 5 bis 130 Sekunden, die AppTests sind der langsame Teil). Die Kennzahlen der Testdateien sind von Hand aus den Dateien gezählt; die Gegenprobe zum Lesen ist die
+146 Tests; die Laufzeit schwankt mit der Rechnerlast (gemessen: 5 bis 130 Sekunden, die AppTests sind der langsame Teil). Die Kennzahlen der Testdateien sind von Hand aus den Dateien gezählt; die Gegenprobe zum Lesen ist die
 Standardbibliothek (`json`). Die Bündel-Tests prüfen am Ordnerbeispiel (als ZIP und als einzelne Dateien dasselbe Ergebnis), dass kein Verweis
 auf eine Datei übrig bleibt, jeder Verweis ein Ziel hat, rekursive Schemas und Kreise enden, und die Fehlerfälle (fehlende, nicht lesbare, nicht
 eindeutige Datei, Netzadresse, Namensgleichheit, ZIP-Grenzen und unbrauchbare ZIP-Einträge). Die AppTests laden Dateien hoch (eine, mehrere, ein

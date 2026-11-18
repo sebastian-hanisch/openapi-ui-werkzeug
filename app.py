@@ -6,6 +6,7 @@ import json
 import streamlit as st
 
 import oa_bundle
+import oa_hinweise
 import oa_parse
 import oa_render
 
@@ -30,17 +31,24 @@ Laden Sie eine **OpenAPI-Beschreibung** hoch (OpenAPI 3.0, 3.1 und Swagger 2.0),
 Endpunkte nach Gruppen, Parameter, Schemas und Beispiele. Die Beschreibung darf **auf mehrere Dateien verteilt** sein
 (`$ref: ./schemas/Sendung.yaml`): Laden Sie dann den **Ordner als ZIP** hoch, oder markieren Sie alle Dateien auf einmal.
 Die Dateien werden zu einer Spezifikation **gebündelt** und **geprüft** (Pflichtfelder, `$ref`-Verweise, doppelte `operationId`,
-Pfadparameter). Die fertige Seite lässt sich als **eigenständige HTML-Datei** laden. Alles wird nur für diese Sitzung gelesen und nicht gespeichert.
+Pfadparameter). Die fertige Seite lässt sich als **eigenständige HTML-Datei** laden. Die Dateien werden im Arbeitsspeicher verarbeitet und nicht
+dauerhaft gespeichert; was dabei nach außen geht, steht unter „Datenschutz“.
 """
 )
 
+with st.expander("📖 Benutzung"):
+    st.markdown(oa_hinweise.benutzung())
+with st.expander("🔒 Datenschutz"):
+    st.markdown(oa_hinweise.datenschutz())
 
-@st.cache_data(show_spinner=False, max_entries=8)
+
+# Zwischenspeicher mit Ablaufzeit: hochgeladene Inhalte bleiben nicht unbegrenzt im Speicher des Servers (siehe Datenschutz)
+@st.cache_data(show_spinner=False, max_entries=oa_hinweise.CACHE_MAX_LADEN, ttl=oa_hinweise.CACHE_TTL_SEKUNDEN)
 def _laden(uploads: tuple[tuple[str, bytes], ...]) -> oa_bundle.Satz:
     return oa_bundle.laden(uploads)
 
 
-@st.cache_data(show_spinner=False, max_entries=16)
+@st.cache_data(show_spinner=False, max_entries=oa_hinweise.CACHE_MAX_BUENDELN, ttl=oa_hinweise.CACHE_TTL_SEKUNDEN)
 def _buendeln(uploads: tuple[tuple[str, bytes], ...], wurzel: str) -> oa_bundle.Buendel:
     return oa_bundle.buendeln(_laden(uploads), wurzel)
 
