@@ -1,0 +1,64 @@
+swagger: "2.0"
+info:
+  title: Fuhrpark
+  version: "1.0"
+  description: 'Beispiel im alten Swagger-2.0-Format (`swagger: "2.0"`, `definitions`, `host`).'
+host: fuhrpark.example.org
+basePath: /api
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+tags:
+  - name: Fahrzeuge
+paths:
+  /fahrzeuge:
+    get:
+      tags: [Fahrzeuge]
+      summary: Fahrzeuge auflisten
+      operationId: listFahrzeuge
+      parameters:
+        - name: typ
+          in: query
+          type: string
+          enum: [lkw, transporter, pkw]
+      responses:
+        "200":
+          description: Liste
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Fahrzeug"
+  /fahrzeuge/{kennzeichen}:
+    get:
+      tags: [Fahrzeuge]
+      summary: Ein Fahrzeug abrufen
+      operationId: getFahrzeug
+      parameters:
+        - name: kennzeichen
+          in: path
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Das Fahrzeug
+          schema:
+            $ref: "#/definitions/Fahrzeug"
+        "404":
+          description: Unbekanntes Kennzeichen
+definitions:
+  Fahrzeug:
+    type: object
+    required: [kennzeichen, typ]
+    properties:
+      kennzeichen:
+        type: string
+        example: HH-AB 1234
+      typ:
+        type: string
+        enum: [lkw, transporter, pkw]
+      nutzlastKg:
+        type: integer
+        example: 3500

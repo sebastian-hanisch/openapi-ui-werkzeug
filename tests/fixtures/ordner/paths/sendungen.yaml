@@ -1,0 +1,34 @@
+get:
+  tags: [Sendungen]
+  summary: Sendungen auflisten
+  operationId: sendungenListen
+  parameters:
+    - $ref: ../common.yaml#/components/parameters/Limit
+  responses:
+    "200":
+      description: Liste
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../schemas/Sendung.yaml
+    "401":
+      $ref: ../common.yaml#/components/responses/NichtAngemeldet
+post:
+  tags: [Sendungen]
+  summary: Sendung anlegen
+  operationId: sendungAnlegen
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../schemas/Sendung.yaml
+  responses:
+    "201":
+      description: Angelegt
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Sendung.yaml

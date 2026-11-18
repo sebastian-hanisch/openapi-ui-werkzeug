@@ -1,0 +1,45 @@
+# Absichtlich fehlerhaft: zeigt, was die Prüfung vor dem Zeichnen meldet.
+openapi: 3.0.3
+info:
+  title: Fehlerhafte Beispiel-API
+  # version fehlt (Pflichtfeld)
+paths:
+  /kunden/{kundenId}:
+    get:
+      operationId: getKunde
+      # Pfadparameter {kundenId} ist nicht beschrieben
+      responses:
+        "200":
+          description: Der Kunde
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Kunde"
+    delete:
+      operationId: getKunde
+      # doppelte operationId, keine responses
+  kunden:
+    get:
+      responses:
+        "200":
+          description: Pfad ohne führenden Schrägstrich
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Kundenliste"
+          # Kundenliste gibt es nicht; außerdem zeigt der nächste Verweis auf eine andere Datei:
+        "404":
+          description: Nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: "gemeinsam.yaml#/Fehler"
+components:
+  schemas:
+    Kunde:
+      type: object
+      properties:
+        name:
+          type: string
+        name:
+          type: string

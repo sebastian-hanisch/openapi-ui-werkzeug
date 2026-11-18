@@ -1,0 +1,23 @@
+parameters:
+  - name: id
+    in: path
+    required: true
+    schema:
+      type: string
+get:
+  tags: [Sendungen, Zustellung]
+  summary: Eine Sendung abrufen
+  operationId: sendungAbrufen
+  responses:
+    "200":
+      description: Die Sendung
+      content:
+        application/json:
+          schema:
+            $ref: ../schemas/Sendung.yaml
+    "404":
+      description: Unbekannt
+      content:
+        application/json:
+          schema:
+            $ref: ../common.yaml#/components/schemas/Fehler

@@ -1,0 +1,25 @@
+openapi: 3.0.3
+info:
+  title: Paketdienst (mehrere Dateien)
+  version: "1.0.0"
+  description: Beispiel für eine Beschreibung, die auf einen Ordner verteilt ist.
+tags:
+  - name: Sendungen
+  - name: Zustellung
+paths:
+  /sendungen:
+    $ref: ./paths/sendungen.yaml
+  /sendungen/{id}:
+    $ref: ./paths/sendung-nach-id.yaml
+components:
+  securitySchemes:
+    token:
+      type: http
+      scheme: bearer
+  schemas:
+    Fehler:
+      $ref: ./common.yaml#/components/schemas/Fehler
+    Adresse:
+      $ref: ./schemas/Adresse.yaml
+security:
+  - token: []

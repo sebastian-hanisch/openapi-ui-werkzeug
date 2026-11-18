@@ -1,0 +1,209 @@
+openapi: 3.0.3
+info:
+  title: Sendungsverfolgung
+  version: 1.2.0
+  description: |
+    Beispiel-API für Sendungen und Touren (erfunden, für diese Demo).
+
+    Mit **Markdown** in der Beschreibung: Listen, `Code` und [Links](https://swagger.io/specification/).
+  contact:
+    name: API-Team
+    email: api@example.org
+servers:
+  - url: https://api.example.org/v1
+    description: Produktion (Beispiel)
+tags:
+  - name: Sendungen
+    description: Anlegen, Suchen und Abrufen von Sendungen
+  - name: Touren
+    description: Touren und ihre Stopps
+paths:
+  /sendungen:
+    get:
+      tags: [Sendungen]
+      summary: Sendungen auflisten
+      operationId: listSendungen
+      parameters:
+        - name: status
+          in: query
+          description: Nur Sendungen mit diesem Status
+          schema:
+            $ref: "#/components/schemas/Status"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Seite der Sendungen
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sendung"
+        "401":
+          $ref: "#/components/responses/NichtAngemeldet"
+    post:
+      tags: [Sendungen]
+      summary: Sendung anlegen
+      operationId: createSendung
+      security:
+        - bearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NeueSendung"
+            example:
+              empfaenger: Muster GmbH
+              gewichtKg: 12.5
+              ziel:
+                plz: "20457"
+                ort: Hamburg
+      responses:
+        "201":
+          description: Angelegt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sendung"
+        "422":
+          description: Ungültige Angaben
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fehler"
+  /sendungen/{sendungId}:
+    parameters:
+      - name: sendungId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Sendungen]
+      summary: Eine Sendung abrufen
+      operationId: getSendung
+      responses:
+        "200":
+          description: Die Sendung
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sendung"
+        "404":
+          description: Unbekannte Sendung
+    delete:
+      tags: [Sendungen]
+      summary: Sendung stornieren
+      operationId: deleteSendung
+      deprecated: true
+      description: Ersetzt durch `POST /sendungen/{sendungId}/storno` (nicht Teil dieses Beispiels).
+      responses:
+        "204":
+          description: Storniert
+  /touren/{tourId}/stopps:
+    get:
+      tags: [Touren]
+      summary: Stopps einer Tour in Fahrtreihenfolge
+      operationId: listStopps
+      parameters:
+        - name: tourId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Geordnete Stopps
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Stopp"
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    NichtAngemeldet:
+      description: Es fehlt ein gültiges Token
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Fehler"
+  schemas:
+    Status:
+      type: string
+      enum: [angelegt, unterwegs, zugestellt, storniert]
+    Adresse:
+      type: object
+      required: [plz, ort]
+      properties:
+        plz:
+          type: string
+          pattern: "^[0-9]{5}$"
+        ort:
+          type: string
+    NeueSendung:
+      type: object
+      required: [empfaenger, gewichtKg, ziel]
+      properties:
+        empfaenger:
+          type: string
+        gewichtKg:
+          type: number
+          format: float
+          exclusiveMinimum: true
+          minimum: 0
+        ziel:
+          $ref: "#/components/schemas/Adresse"
+    Sendung:
+      allOf:
+        - $ref: "#/components/schemas/NeueSendung"
+        - type: object
+          required: [id, status]
+          properties:
+            id:
+              type: string
+              format: uuid
+              readOnly: true
+            status:
+              $ref: "#/components/schemas/Status"
+            angelegtAm:
+              type: string
+              format: date-time
+              example: 2024-05-01T08:30:00Z
+    Stopp:
+      type: object
+      properties:
+        reihenfolge:
+          type: integer
+        ort:
+          type: string
+        ankunft:
+          type: string
+          format: date-time
+    Fehler:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "no"
+        meldung:
+          type: string

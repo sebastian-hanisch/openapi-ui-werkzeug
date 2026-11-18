@@ -1,0 +1,13 @@
+type: object
+description: Eine Sendung; Teilsendungen sind wieder Sendungen (rekursiv).
+required: [id, empfaenger]
+properties:
+  id:
+    type: string
+    example: S-1001
+  empfaenger:
+    $ref: ./Adresse.yaml
+  teilsendungen:
+    type: array
+    items:
+      $ref: ./Sendung.yaml

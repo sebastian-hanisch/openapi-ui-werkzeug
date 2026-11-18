@@ -1,0 +1,26 @@
+components:
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      description: Höchstzahl der Treffer
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  schemas:
+    Fehler:
+      type: object
+      properties:
+        code:
+          type: string
+        meldung:
+          type: string
+  responses:
+    NichtAngemeldet:
+      description: Kein oder ungültiges Token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Fehler'
